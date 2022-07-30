@@ -1,0 +1,37 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+struct MeshProperties {
+    float4x4 mat;
+    float4 color;
+};
+
+RWStructuredBuffer<MeshProperties> _Properties;
+
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    float4x4 mat = _Properties[id.x].mat;
+    // In a transform matrix, the position (translation) vector is the last column.
+    float3 position = float3(mat[0][3], mat[1][3], mat[2][3]);
+
+    // Create a new translation matrix which represents a move in a direction.
+    
+    MeshProperties temp = _Properties[id.x];
+
+    temp.mat[0][3] = temp.mat[0][3] - 1;
+
+    // Apply translation to existing matrix, which will be read in the shader.
+    _Properties[id.x] = temp;
+
+    /* Just for demo gif.  Not actually very useful -- need to inverse rotation first.
+    float4x4 rotation = float4x4(
+        .999, -.01, 0, 0.1,
+        .01, .999, 0, 0.1,
+        0, 0, 1, 0.1,
+        0, 0, 0, 1
+    );
+    _Properties[id.x].mat = mul(_Properties[id.x].mat, rotation);
+    */
+}
